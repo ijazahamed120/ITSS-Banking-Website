@@ -11,18 +11,28 @@ let connectionPromise = null;
 
 function loadEnvFile() {
   const envPath = path.join(process.cwd(), '.env');
+
   if (!fs.existsSync(envPath)) return;
 
   const envContent = fs.readFileSync(envPath, 'utf-8');
-  envContent.split('\n').forEach((line) => {
+
+  envContent.split(/\r?\n/).forEach((line) => {
     const trimmed = line.trim();
+
     if (!trimmed || trimmed.startsWith('#')) return;
 
     const eqIdx = trimmed.indexOf('=');
+
     if (eqIdx <= 0) return;
 
     const key = trimmed.substring(0, eqIdx).trim();
-    const val = trimmed.substring(eqIdx + 1).trim().replace(/^["']/, '').replace(/["']$/, '');
+
+    const val = trimmed
+      .substring(eqIdx + 1)
+      .trim()
+      .replace(/^["']/, '')
+      .replace(/["']$/, '');
+
     if (!process.env[key]) {
       process.env[key] = val;
     }
@@ -31,36 +41,39 @@ function loadEnvFile() {
 
 function getMongoUri() {
   loadEnvFile();
-  const uri = process.env.MONGODB_URI ? process.env.MONGODB_URI.trim() : '';
+
+  const uri = process.env.MONGODB_URI?.trim();
+
   if (!uri) {
     throw new Error(
-      'MONGODB_URI is not configured. Set MONGODB_URI in backend .env or environment variables.'
+      'MONGODB_URI is not configured.'
     );
   }
+
   return uri;
 }
 
 function getDbName() {
   loadEnvFile();
-  const dbName = process.env.MONGODB_DB_NAME ? process.env.MONGODB_DB_NAME.trim() : '';
+
+  const dbName = process.env.MONGODB_DB_NAME?.trim();
+
   if (!dbName) {
     throw new Error(
-      'MONGODB_DB_NAME is not configured. Set MONGODB_DB_NAME in backend .env or environment variables.'
+      'MONGODB_DB_NAME is not configured.'
     );
   }
+
   return dbName;
 }
 
-/**
- * Connect to MongoDB using Mongoose.
- * Reuses an existing connection when already connected.
- * @returns {Promise<typeof mongoose>}
- */
 export async function connectMongo() {
+  // Already connected
   if (mongoose.connection.readyState === 1) {
     return mongoose;
   }
 
+  // Reuse connection attempt already in progress
   if (connectionPromise) {
     return connectionPromise;
   }
@@ -68,36 +81,55 @@ export async function connectMongo() {
   const uri = getMongoUri();
   const dbName = getDbName();
 
-  connectionPromise = Promise.race([
-    mongoose
-      .connect(uri, {
-        dbName,
-        serverSelectionTimeoutMS: 5000,
-      })
-      .then(() => {
-        console.log(`[MongoDB] Connected to database "${dbName}"`);
-        return mongoose;
-      }),
-    new Promise((_, reject) =>
-      setTimeout(() => reject(new Error('[MongoDB] Connection timeout - check MONGODB_URI and network')), 8000)
-    ),
-  ]).catch((err) => {
-    connectionPromise = null;
-    console.error('[MongoDB] Connection failed:', err.message);
-    throw err;
-  });
+  console.log('[MongoDB] Starting connection...');
+  console.log(`[MongoDB] Database: ${dbName}`);
+  console.log(
+    `[MongoDB] URI type: ${uri.startsWith('mongodb+srv://') ? 'Atlas SRV' : 'MongoDB URI'}`
+  );
+
+  connectionPromise = mongoose
+    .connect(uri, {
+      dbName,
+
+      // Give Atlas/network enough time to respond.
+      serverSelectionTimeoutMS: 15000,
+
+      // Connection establishment timeout.
+      connectTimeoutMS: 15000,
+
+      // Keep the connection alive.
+      socketTimeoutMS: 45000,
+
+      // Helps on hosts where IPv6 causes connectivity problems.
+      family: 4,
+    })
+    .then(() => {
+      console.log(
+        `[MongoDB] Connected successfully to database "${dbName}"`
+      );
+
+      return mongoose;
+    })
+    .catch((err) => {
+      connectionPromise = null;
+
+      console.error('[MongoDB] Connection failed:', err.message);
+
+      throw err;
+    });
 
   return connectionPromise;
 }
 
-/**
- * Gracefully disconnect from MongoDB.
- * @returns {Promise<void>}
- */
 export async function disconnectMongo() {
-  if (mongoose.connection.readyState === 0) return;
+  if (mongoose.connection.readyState === 0) {
+    return;
+  }
+
   await mongoose.disconnect();
+
   connectionPromise = null;
+
   console.log('[MongoDB] Disconnected');
 }
 
