@@ -8,17 +8,13 @@
  * Backend providers: Google Gemini (primary) with Groq fallback.
  */
 
-const E1_ENDPOINT = '/api/ai/investigation-note';
-const E1_FALLBACK_URL = 'http://localhost:3001/api/ai/investigation-note';
+const E1_ENDPOINT = 'https://itss-banking-website.onrender.com/api/ai/investigation-note';
 
-const E2_ENDPOINT = '/api/ai/kyc-summary';
-const E2_FALLBACK_URL = 'http://localhost:3001/api/ai/kyc-summary';
+const E2_ENDPOINT = 'https://itss-banking-website.onrender.com/api/ai/kyc-summary';
 
-const E3_ENDPOINT = '/api/ai/loan-decision-note';
-const E3_FALLBACK_URL = 'http://localhost:3001/api/ai/loan-decision-note';
+const E3_ENDPOINT = 'https://itss-banking-website.onrender.com/api/ai/loan-decision-note';
 
-const E4_ENDPOINT = '/api/ai/payee-risk-note';
-const E4_FALLBACK_URL = 'http://localhost:3001/api/ai/payee-risk-note';
+const E4_ENDPOINT = 'https://itss-banking-website.onrender.com/api/ai/payee-risk-note';
 
 /**
  * Generate grounded AI Investigation Note for a transaction (E1)
@@ -332,8 +328,8 @@ export async function generatePayeeRiskNote(txnId) {
   return data;
 }
 
-const E5_ENDPOINT = '/api/ai/compliance-summary';
-const E5_FALLBACK_URL = 'http://localhost:3001/api/ai/compliance-summary';
+const E5_ENDPOINT = 'https://itss-banking-website.onrender.com/api/ai/compliance-summary';
+const E5_FALLBACK_URL = 'https://itss-banking-website.onrender.com/api/ai/compliance-summary';
 
 /**
  * Generate grounded AI Risk & Compliance Summary for compliance management
