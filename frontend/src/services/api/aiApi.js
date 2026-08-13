@@ -182,30 +182,33 @@ export async function generateLoanDecisionNote(applicationId) {
 
   try {
     response = await fetch(E3_ENDPOINT, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ applicationId }),
-    });
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  credentials: 'include',
+  body: JSON.stringify({ applicationId }),
+});
 
     if (response.status === 404) {
-      response = await fetch(E3_FALLBACK_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ applicationId }),
-      });
+     response = await fetch(E3_FALLBACK_URL, {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  credentials: 'include',
+  body: JSON.stringify({ applicationId }),
+});
     }
   } catch (err) {
     response = await fetch(E3_FALLBACK_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ applicationId }),
-    });
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  credentials: 'include',
+  body: JSON.stringify({ applicationId }),
+});
   }
 
   if (!response.ok) {
